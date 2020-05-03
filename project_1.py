@@ -1,3 +1,4 @@
+
 import numpy as np
 import cv2
 import scipy.misc
@@ -29,11 +30,34 @@ class AnimationMaker:
         if self.max_dimensions <= d_image.dim:
             self.max_dimensions = d_image.dim
 
+    def frame(self, t):
+        print("This is in frame function  from AnimationMaker\n\n")
+        d_image = self.sequence[self.current_step]
+        self.current_step += 1
+        image_array = d_image.array
+        resized = np.zeros((self.max_height, self.max_width, self.max_dimensions))
+        resized.fill(255)  # to have gifs with white background
+        temp_shape = image_array.shape
+        resized[:temp_shape[0], :temp_shape[1], :temp_shape[2]] = image_array
+        return resized
+
+    @property
+    def clip(self):
+        self.current_step = 0
+        return mpy.VideoClip(self.frame, duration=(len(self.sequence)-1)/self.default_FPS)
+
+    def export_webm(self, filename="debug/animation.webm"):
+       self.clip.write_videofile(filename, audio=False)
+
+    def export_gif(self, filename="debug/animation.gif"):
+       self.clip.write_gif(filename, fps=self.default_FPS)
+
 
 class Image:
     def __init__(self, array=None, transposed=False):
         #print("This is in __init__ function  from Image\n\n")
         self._array = array
+        self.temp_array = array
         self.greyscale_coeffs = [.299, .587, .144]
         self.transposed = transposed
         self.greyscale_image = None
@@ -238,11 +262,12 @@ class SeamCarver:
         for i in range(0, self.image.dim):
             for j in range(0, self.image.height):
                 if seam.transposed:
-                    #print(j)
+                    #print("This is if conditions")
                     output[j, :, i] = np.append(self.image.array[j, 0: seam.array[0, j], i],
                                                 self.image.array[j, seam.array[0, j] + 1: self.image.width, i]
                                                 )
                 else:
+                    #print("This is else condition")
                     output[j, :, i] = np.append(self.image.array[j, 0: seam.array[j, 0], i],
                                                 self.image.array[j, seam.array[j, 0] + 1: self.image.width, i]
                                                 )
@@ -313,6 +338,9 @@ class SeamCarver:
             self.add_seams(desired_h)
             self.image.transposed = False
 
+        #if !self.image.transposed:
+
+
         return self.image
 
 
@@ -345,9 +373,16 @@ save_to_file = "/Users/adarshkesireddy/Documents/Research/Coding/AnalysisProject
 
 if __name__ == '__main__':
     #scale_down_example()
+    temp_file = cv2.imread(Path_to_file)
     sc = SeamCarver(Path_to_file)
     image = sc.resize(394, 499)
     #print(len(image))
     image.save(save_to_file)
+    for i in range(0,2):
+        for j in range(0,2):
+            print(temp_file[[[j]]])
+            print(image.array[[[j]]])
+
+
     plothistogram(Path_to_file,save_to_file)
     #plothistogram(save_to_file)
